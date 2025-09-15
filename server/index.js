@@ -63,7 +63,7 @@ app.use('*', (req, res) => {
 });
 
 // MongoDB connection
-mongoose.connect('mongodb+srv://krishmakadiya2005:tysl8201X2vWHzNn@cluster0.xosk58x.mongodb.net/')
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
     app.listen(PORT, () => {
