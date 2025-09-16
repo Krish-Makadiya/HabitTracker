@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import HabitCalendar from '../components/HabitCalendar';
 import HabitManager from '../components/HabitManager';
+import HabitCompletionRates from '../components/HabitCompletionRates';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import apiService from '../services/api';
 
 const Dashboard = () => {
@@ -121,70 +123,54 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Habit Tracker</h1>
-              <p className="mt-2 text-gray-600">
-                Track your daily habits and build consistent routines
-              </p>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">My Habits</h1>
+          <button
+            onClick={() => setShowManager(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add Habit
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <HabitCalendar
+              habits={habits}
+              completions={completions}
+              onToggleCompletion={handleToggleCompletion}
+              onDeleteHabit={handleDeleteHabit}
+              loading={loading}
+            />
+          </div>
+          <div className="lg:col-span-1 space-y-6">
+            <HabitCompletionRates />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-white rounded-lg shadow">
+                <div className="text-2xl font-bold text-indigo-600">
+                  {habits.length}
+                </div>
+                <div className="text-sm text-gray-600">Active Habits</div>
+              </div>
+              <div className="text-center p-4 bg-white rounded-lg shadow">
+                <div className="text-2xl font-bold text-green-600">
+                  {completions.filter(c => c.completed).length}
+                </div>
+                <div className="text-sm text-gray-600">Completions</div>
+              </div>
             </div>
-            <button
-              onClick={() => setShowManager(!showManager)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              {showManager ? 'Hide Manager' : 'Manage Habits'}
-            </button>
           </div>
         </div>
 
-        <div className="space-y-8">
-          {/* Habit Manager */}
-          {showManager && (
-            <HabitManager
-              habits={habits}
-              onAddHabit={handleAddHabit}
-              onUpdateHabit={handleUpdateHabit}
-              onDeleteHabit={handleDeleteHabit}
-            />
-          )}
-
-          {/* Habit Calendar */}
-          <HabitCalendar
-            habits={habits}
-            completions={completions}
-            onToggleCompletion={handleToggleCompletion}
-          />
-
-          {/* Stats Section */}
-          {habits.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{habits.length}</div>
-                  <div className="text-sm text-gray-600">Active Habits</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
-                    {completions.filter(c => c.completed).length}
-                  </div>
-                  <div className="text-sm text-gray-600">Completions This Month</div>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {habits.length > 0 
-                      ? Math.round((completions.filter(c => c.completed).length / (habits.length * new Date().getDate())) * 100) || 0
-                      : 0
-                    }%
-                  </div>
-                  <div className="text-sm text-gray-600">Completion Rate</div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <HabitManager
+          isOpen={showManager}
+          onClose={() => setShowManager(false)}
+          onSave={handleAddHabit}
+          habits={habits}
+          onUpdateHabit={handleUpdateHabit}
+          onDeleteHabit={handleDeleteHabit}
+        />
       </div>
     </div>
   );

@@ -97,6 +97,10 @@ class ApiService {
     return this.request('/habits');
   }
 
+  async getHabitCompletionRates(year, month) {
+    return this.request(`/habits/completion-rates?year=${year}&month=${month}`);
+  }
+
   async createHabit(habitData) {
     return this.request('/habits', {
       method: 'POST',

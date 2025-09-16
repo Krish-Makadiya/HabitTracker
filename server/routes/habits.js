@@ -318,6 +318,90 @@ router.get('/scores/range', async (req, res) => {
 });
 
 // Get score statistics for a date range
+// Get monthly completion rates for all habits
+router.get('/completion-rates', async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    
+    if (!year || !month) {
+      return res.status(400).json({ message: 'Year and month are required' });
+    }
+
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    const daysInMonth = endDate.getDate();
+
+    // Get all active habits for the user
+    const habits = await Habit.find({ 
+      userId: req.user._id,
+      isActive: true 
+    });
+
+    // Get completion data for all habits in the specified month
+    const habitCompletions = await HabitCompletion.aggregate([
+      {
+        $match: {
+          userId: req.user._id,
+          date: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            habitId: '$habitId',
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }
+          },
+          completed: { $first: '$completed' }
+        }
+      },
+      {
+        $group: {
+          _id: '$_id.habitId',
+          completedDays: {
+            $sum: { $cond: ['$completed', 1, 0] }
+          },
+          totalDays: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          habitId: '$_id',
+          completionRate: {
+            $multiply: [
+              { $divide: ['$completedDays', '$totalDays'] },
+              100
+            ]
+          },
+          completedDays: 1,
+          totalDays: 1
+        }
+      }
+    ]);
+
+    // Combine habit data with completion rates
+    const habitsWithRates = habits.map(habit => {
+      const completionData = habitCompletions.find(hc => 
+        hc.habitId.toString() === habit._id.toString()
+      ) || { completionRate: 0, completedDays: 0, totalDays: daysInMonth };
+
+      return {
+        _id: habit._id,
+        name: habit.name,
+        color: habit.color,
+        completionRate: Math.round(completionData.completionRate) || 0,
+        completedDays: completionData.completedDays || 0,
+        totalDays: completionData.totalDays || daysInMonth,
+        goal: habit.goal || 100 // Default goal is 100%
+      };
+    });
+
+    res.json(habitsWithRates);
+  } catch (error) {
+    console.error('Error fetching habit completion rates:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.get('/scores/stats', async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
